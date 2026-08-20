@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" fill="none">
+  <defs>
+    <linearGradient id="ctGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C1D95"/>
+      <stop offset="50%" stop-color="#6B21A8"/>
+      <stop offset="100%" stop-color="#3B0764"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#ctGrad)"/>
+  <circle cx="700" cy="350" r="250" fill="#A855F7" opacity="0.15"/>
+  <circle cx="100" cy="100" r="160" fill="#C084FC" opacity="0.1"/>
+  
+  <g transform="translate(100, 120)">
+    <rect width="600" height="260" rx="24" fill="#581C87" stroke="#9333EA" stroke-width="2" opacity="0.9"/>
+    <text x="40" y="80" fill="#E9D5FF" font-family="system-ui, sans-serif" font-weight="800" font-size="14" letter-spacing="3">COLLECTION OF THOUGHTS</text>
+    <text x="40" y="130" fill="#FFFFFF" font-family="system-ui, sans-serif" font-weight="900" font-size="34">Anthologies, Arts & Mental Wellness</text>
+    <text x="40" y="175" fill="#DDD6FE" font-family="system-ui, sans-serif" font-weight="500" font-size="18">Mental Notes • Stories of Pride • Category Is • Copy Paste</text>
+  </g>
+</svg>
