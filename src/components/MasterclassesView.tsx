@@ -463,6 +463,34 @@ export function MasterclassesView({
                       {item.level}
                     </span>
                   </div>
+
+                  {/* Direct Change Cover Overlay */}
+                  {onUpdateMasterclass && (
+                    <label 
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 cursor-pointer font-bold text-xs backdrop-blur-[2px] z-20"
+                      title="Upload masterclass cover artwork from device"
+                    >
+                      <Upload className="w-5 h-5 text-indigo-300" />
+                      <span>Change Cover Image</span>
+                      <span className="text-[9px] text-zinc-300 font-medium">Click to upload file</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            compressImageFile(file, 1000, 1000, 0.85).then((dataUrl) => {
+                              if (dataUrl) {
+                                onUpdateMasterclass({ ...item, imageUrl: dataUrl });
+                              }
+                            });
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
                 </div>
 
                 {/* Card Content Body */}
@@ -692,10 +720,34 @@ export function MasterclassesView({
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent flex items-end p-6">
-                  <div>
+                  <div className="flex-1 pr-4">
                     <h2 className="text-2xl sm:text-3xl font-black text-white">{selectedMasterclass.title}</h2>
                     <p className="text-zinc-300 text-xs sm:text-sm mt-1">{selectedMasterclass.tagline}</p>
                   </div>
+
+                  {onUpdateMasterclass && (
+                    <label className="px-3.5 py-2 bg-black/60 hover:bg-black/90 border border-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer backdrop-blur-md transition-all shrink-0">
+                      <Upload className="w-3.5 h-3.5 text-indigo-300" />
+                      <span>Change Cover</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            compressImageFile(file, 1000, 1000, 0.85).then((dataUrl) => {
+                              if (dataUrl) {
+                                const updated = { ...selectedMasterclass, imageUrl: dataUrl };
+                                onUpdateMasterclass(updated);
+                                setSelectedMasterclass(updated);
+                              }
+                            });
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
 

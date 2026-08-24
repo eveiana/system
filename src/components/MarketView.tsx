@@ -1409,12 +1409,27 @@ export function MarketView({
             </div>
 
             <div className="p-4 bg-zinc-50 border-t border-zinc-150 flex items-center justify-between shrink-0">
-              <button
-                onClick={() => setViewingItem(null)}
-                className="px-4 py-2 bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-600 font-bold rounded-xl text-xs transition-colors cursor-pointer"
-              >
-                Close Details
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setViewingItem(null)}
+                  className="px-4 py-2 bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-600 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                >
+                  Close Details
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to remove "${viewingItem.title}" from the catalogue permanently?`)) {
+                      onDeleteItem(viewingItem.id);
+                      setViewingItem(null);
+                    }
+                  }}
+                  className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl text-xs transition-colors cursor-pointer flex items-center gap-1.5 border border-rose-200"
+                  title="Permanently Delete Item"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
 
               <div className="flex items-center gap-2">
                 <button

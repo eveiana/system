@@ -23,23 +23,36 @@ import {
   CheckCircle,
   FolderPlus,
   Image as ImageIcon,
-  Camera
+  Camera,
+  Trash2
 } from 'lucide-react';
 
 interface ProgrammesViewProps {
   programmes: Programme[];
   onUpdateProgramme?: (id: string, updates: Partial<Programme>) => void;
+  onAddProgramme?: (prog: Omit<Programme, 'id'>) => void;
+  onDeleteProgramme?: (id: string) => void;
   onNavigateToProjects?: (categoryFilter?: string) => void;
 }
 
 export function ProgrammesView({ 
   programmes, 
   onUpdateProgramme,
+  onAddProgramme,
+  onDeleteProgramme,
   onNavigateToProjects 
 }: ProgrammesViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeProgramme, setActiveProgramme] = useState<Programme | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // New Programme Form State
+  const [newTitle, setNewTitle] = useState("");
+  const [newTagline, setNewTagline] = useState("");
+  const [newCategory, setNewCategory] = useState("Multi-Disciplinary Innovation");
+  const [newDescription, setNewDescription] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
 
   // Modal State for Uploading Image
   const [uploadingForId, setUploadingForId] = useState<string | null>(null);
@@ -154,16 +167,29 @@ export function ProgrammesView({
           })}
         </div>
 
-        {/* Search Field */}
-        <div className="relative min-w-[260px]">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input 
-            type="text"
-            placeholder="Search programmes or projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-zinc-50 border border-zinc-200 focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-medium outline-none transition-all text-zinc-800"
-          />
+        {/* Actions Bar */}
+        <div className="flex items-center gap-2">
+          {/* Search Field */}
+          <div className="relative min-w-[220px]">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text"
+              placeholder="Search programmes or projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-zinc-50 border border-zinc-200 focus:border-indigo-500 focus:bg-white rounded-xl text-xs font-medium outline-none transition-all text-zinc-800"
+            />
+          </div>
+
+          {onAddProgramme && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm shadow-indigo-600/20"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Programme</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -415,6 +441,20 @@ export function ProgrammesView({
                         <span>View Active Projects</span>
                       </button>
                     )}
+
+                    {onDeleteProgramme && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to permanently delete "${prog.title}"?`)) {
+                            onDeleteProgramme(prog.id);
+                          }
+                        }}
+                        className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-100"
+                        title="Delete Programme"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -576,7 +616,23 @@ export function ProgrammesView({
 
             {/* Modal Footer */}
             <div className="p-4 bg-zinc-50 border-t border-zinc-200 flex flex-wrap justify-between items-center gap-3 shrink-0">
-              <span className="text-[11px] text-zinc-500 font-medium">Creatives Garage Official Programme</span>
+              <div className="flex items-center gap-2">
+                {onDeleteProgramme && (
+                  <button
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to permanently delete "${activeProgramme.title}"?`)) {
+                        onDeleteProgramme(activeProgramme.id);
+                        setActiveProgramme(null);
+                      }
+                    }}
+                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Programme</span>
+                  </button>
+                )}
+              </div>
+
               <div className="flex items-center gap-2">
                 {activeProgramme.externalUrl && (
                   <a
@@ -597,6 +653,149 @@ export function ProgrammesView({
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Programme Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl border border-zinc-200 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-zinc-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-zinc-900 text-base">Add New Programme</h3>
+                <p className="text-zinc-500 text-xs mt-0.5">Create and document a new organizational programme initiative</p>
+              </div>
+              <button 
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1.5 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!newTitle.trim() || !newTagline.trim()) {
+                  alert('Please enter a title and tagline.');
+                  return;
+                }
+                if (onAddProgramme) {
+                  onAddProgramme({
+                    title: newTitle.trim(),
+                    tagline: newTagline.trim(),
+                    category: newCategory,
+                    description: newDescription.trim() || newTagline.trim(),
+                    imageUrl: newImageUrl || undefined,
+                    badgeColor: 'bg-indigo-600/90 text-white border-indigo-400',
+                    pillars: [],
+                    keyProjects: []
+                  });
+                }
+                setIsAddModalOpen(false);
+                setNewTitle("");
+                setNewTagline("");
+                setNewDescription("");
+                setNewImageUrl("");
+              }}
+              className="p-6 space-y-4 text-xs font-semibold text-zinc-600 max-h-[75vh] overflow-y-auto"
+            >
+              <div>
+                <label className="block text-zinc-500 mb-1">Programme Title</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. East African XR & Immersive Storytelling Lab"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-indigo-500 focus:bg-white text-zinc-800"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-500 mb-1">Category</label>
+                  <select 
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-indigo-500 focus:bg-white text-zinc-800 cursor-pointer"
+                  >
+                    {categories.filter(c => c !== 'All').map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-500 mb-1">Short Tagline</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. Empowering immersive virtual reality creators"
+                    value={newTagline}
+                    onChange={(e) => setNewTagline(e.target.value)}
+                    className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-indigo-500 focus:bg-white text-zinc-800"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-500 mb-1">Description & Mission</label>
+                <textarea 
+                  rows={3}
+                  placeholder="Provide comprehensive details about this programme's mandate, cohort timeline, and objectives..."
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs outline-none focus:border-indigo-500 focus:bg-white text-zinc-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-500 mb-1">Cover Artwork</label>
+                <div className="flex items-center gap-3">
+                  <label className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl text-xs transition-colors cursor-pointer flex items-center gap-1.5 border border-zinc-200">
+                    <Upload className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Upload Image File</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageFileRead(file, (dataUrl) => {
+                            setNewImageUrl(dataUrl);
+                          });
+                        }
+                      }}
+                    />
+                  </label>
+                  {newImageUrl && (
+                    <div className="flex items-center gap-2">
+                      <img src={newImageUrl} alt="Preview" className="w-10 h-10 object-cover rounded-lg border border-zinc-200" />
+                      <span className="text-[11px] text-emerald-600 font-bold">Image attached</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-zinc-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-4 py-2 bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-600 font-bold rounded-xl text-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-600/20 cursor-pointer"
+                >
+                  Create Programme
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -135,6 +135,7 @@ export interface MarketItem {
   stock: number;
   description: string;
   url?: string;
+  imageUrl?: string;
   type: 'Physical' | 'Digital';
   salesCount: number;
 }

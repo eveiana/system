@@ -35,6 +35,7 @@ import {
 } from './types';
 
 import { resolveImageUrl } from './images';
+import { loadStorage, saveStorage, loadFromIDB } from './lib/storage';
 
 // Sidebar & Header components
 import { AppSidebar } from './components/AppSidebar';
@@ -78,114 +79,120 @@ const TITLES: Record<string, string> = {
   "/settings/profile": "My Profile Settings",
 };
 
+// Initialize seed data with pre-resolved asset URLs
+const SEED_PROJECTS = INITIAL_PROJECTS.map(p => ({
+  ...p,
+  imageUrl: p.imageUrl ? resolveImageUrl(p.imageUrl) : p.imageUrl
+}));
 
-function loadStorage<T>(key: string, fallback: T): T {
-  try {
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && Array.isArray(fallback)) {
-        if (parsed.length === 0 && fallback.length > 0) {
-          return fallback;
-        }
+const SEED_MEDIA = INITIAL_MEDIA.map(m => ({
+  ...m,
+  url: m.url ? resolveImageUrl(m.url) : m.url
+}));
 
-        const fallbackMap = new Map((fallback as any[]).map(item => [item.id, item]));
-        const fallbackIds = new Set((fallback as any[]).map(item => item.id));
+const SEED_MARKET_ITEMS = INITIAL_MARKET_ITEMS.map(item => ({
+  ...item,
+  url: item.url ? resolveImageUrl(item.url) : item.url,
+  imageUrl: item.imageUrl ? resolveImageUrl(item.imageUrl) : (item.url ? resolveImageUrl(item.url) : undefined)
+}));
 
-        let itemsToProcess = parsed;
-        if (key === 'cg_marketItems') {
-          itemsToProcess = parsed.filter((item: any) => !item.id || !item.id.startsWith('mkt-') || fallbackIds.has(item.id));
-        }
-
-        const parsedItems = itemsToProcess.map((item: any) => {
-          const fbItem = item.id ? fallbackMap.get(item.id) : undefined;
-          if (fbItem) {
-            const merged = { ...item, ...fbItem };
-            if (item.url && (item.url.startsWith('data:') || item.url.startsWith('blob:'))) {
-              merged.url = item.url;
-            } else if (merged.url) {
-              merged.url = resolveImageUrl(merged.url);
-            }
-            if (item.imageUrl && (item.imageUrl.startsWith('data:') || item.imageUrl.startsWith('blob:'))) {
-              merged.imageUrl = item.imageUrl;
-            } else if (merged.imageUrl) {
-              merged.imageUrl = resolveImageUrl(merged.imageUrl);
-            }
-            if (item.avatar && (item.avatar.startsWith('data:') || item.avatar.startsWith('blob:'))) {
-              merged.avatar = item.avatar;
-            }
-            return merged;
-          }
-          return {
-            ...item,
-            url: item.url ? resolveImageUrl(item.url) : item.url,
-            imageUrl: item.imageUrl ? resolveImageUrl(item.imageUrl) : item.imageUrl
-          };
-        });
-
-        const existingIds = new Set(parsedItems.map((i: any) => i.id));
-        (fallback as any[]).forEach(fbItem => {
-          if (fbItem.id && !existingIds.has(fbItem.id)) {
-            if (key === 'cg_marketItems') {
-              parsedItems.unshift(fbItem);
-            } else {
-              parsedItems.push(fbItem);
-            }
-          }
-        });
-
-        return parsedItems as unknown as T;
-      }
-      return parsed;
-    }
-  } catch (e) {
-    console.warn(`Error reading ${key} from localStorage:`, e);
-  }
-  return fallback;
-}
-
-function saveStorage<T>(key: string, data: T): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    console.warn(`Error saving ${key} to localStorage:`, e);
-  }
-}
+const SEED_PROGRAMMES = INITIAL_PROGRAMMES.map(p => ({
+  ...p,
+  imageUrl: p.imageUrl ? resolveImageUrl(p.imageUrl) : p.imageUrl,
+  keyProjects: p.keyProjects?.map(kp => ({
+    ...kp,
+    imageUrl: kp.imageUrl ? resolveImageUrl(kp.imageUrl) : kp.imageUrl
+  }))
+}));
 
 export default function App() {
-  // State Engine with Local Storage Persistence
+  // State Engine with High-Capacity Durable Persistence
   const [user, setUser] = useState<UserProfile>(() => loadStorage('cg_user', INITIAL_USER));
   const [members, setMembers] = useState<Member[]>(() => loadStorage('cg_members', INITIAL_MEMBERS));
   const [applications, setApplications] = useState<Application[]>(() => loadStorage('cg_applications', INITIAL_APPLICATIONS));
-  const [projects, setProjects] = useState<Project[]>(() => loadStorage('cg_projects', INITIAL_PROJECTS));
+  const [projects, setProjects] = useState<Project[]>(() => loadStorage('cg_projects', SEED_PROJECTS));
   const [tasks, setTasks] = useState<Task[]>(() => loadStorage('cg_tasks', INITIAL_TASKS));
   const [events, setEvents] = useState<Event[]>(() => loadStorage('cg_events', INITIAL_EVENTS));
   const [bookings, setBookings] = useState<Booking[]>(() => loadStorage('cg_bookings', INITIAL_BOOKINGS));
   const [resources, setResources] = useState<ResourceFile[]>(() => loadStorage('cg_resources', INITIAL_RESOURCES));
   const [transactions, setTransactions] = useState<Transaction[]>(() => loadStorage('cg_transactions', INITIAL_TRANSACTIONS));
   const [invoices, setInvoices] = useState<Invoice[]>(() => loadStorage('cg_invoices', INITIAL_INVOICES));
-  const [media, setMedia] = useState<MediaItem[]>(() => loadStorage('cg_media', INITIAL_MEDIA));
-  const [marketItems, setMarketItems] = useState<MarketItem[]>(() => loadStorage('cg_marketItems', INITIAL_MARKET_ITEMS));
+  const [media, setMedia] = useState<MediaItem[]>(() => loadStorage('cg_media', SEED_MEDIA));
+  const [marketItems, setMarketItems] = useState<MarketItem[]>(() => loadStorage('cg_marketItems', SEED_MARKET_ITEMS));
   const [marketSales, setMarketSales] = useState<MarketSale[]>(() => loadStorage('cg_marketSales', INITIAL_MARKET_SALES));
-  const [programmes, setProgrammes] = useState<Programme[]>(() => loadStorage('cg_programmes', INITIAL_PROGRAMMES));
+  const [programmes, setProgrammes] = useState<Programme[]>(() => loadStorage('cg_programmes', SEED_PROGRAMMES));
   const [masterclasses, setMasterclasses] = useState<Masterclass[]>(() => loadStorage('cg_masterclasses', INITIAL_MASTERCLASSES));
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Sync state changes with localStorage
-  useEffect(() => { saveStorage('cg_user', user); }, [user]);
-  useEffect(() => { saveStorage('cg_members', members); }, [members]);
-  useEffect(() => { saveStorage('cg_applications', applications); }, [applications]);
-  useEffect(() => { saveStorage('cg_projects', projects); }, [projects]);
-  useEffect(() => { saveStorage('cg_tasks', tasks); }, [tasks]);
-  useEffect(() => { saveStorage('cg_events', events); }, [events]);
-  useEffect(() => { saveStorage('cg_bookings', bookings); }, [bookings]);
-  useEffect(() => { saveStorage('cg_resources', resources); }, [resources]);
-  useEffect(() => { saveStorage('cg_transactions', transactions); }, [transactions]);
-  useEffect(() => { saveStorage('cg_invoices', invoices); }, [invoices]);
-  useEffect(() => { saveStorage('cg_media', media); }, [media]);
-  useEffect(() => { saveStorage('cg_marketItems', marketItems); }, [marketItems]);
-  useEffect(() => { saveStorage('cg_marketSales', marketSales); }, [marketSales]);
-  useEffect(() => { saveStorage('cg_programmes', programmes); }, [programmes]);
-  useEffect(() => { saveStorage('cg_masterclasses', masterclasses); }, [masterclasses]);
+  // Async IndexedDB hydration on app startup
+  useEffect(() => {
+    let isMounted = true;
+    async function hydrate() {
+      const keysAndSetters: [string, (val: any) => void][] = [
+        ['cg_user', setUser],
+        ['cg_members', setMembers],
+        ['cg_applications', setApplications],
+        ['cg_projects', setProjects],
+        ['cg_tasks', setTasks],
+        ['cg_events', setEvents],
+        ['cg_bookings', setBookings],
+        ['cg_resources', setResources],
+        ['cg_transactions', setTransactions],
+        ['cg_invoices', setInvoices],
+        ['cg_media', setMedia],
+        ['cg_marketItems', setMarketItems],
+        ['cg_marketSales', setMarketSales],
+        ['cg_programmes', setProgrammes],
+        ['cg_masterclasses', setMasterclasses],
+      ];
+
+      for (const [key, setter] of keysAndSetters) {
+        try {
+          const idbData = await loadFromIDB(key);
+          if (isMounted && idbData !== null && idbData !== undefined) {
+            setter(idbData);
+          }
+        } catch {
+          // IndexedDB hydration failed silently, localStorage copy already active
+        }
+      }
+
+      if (isMounted) {
+        setIsHydrated(true);
+      }
+    }
+    hydrate();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Sync state changes with high-capacity storage only AFTER initial hydration completes
+  useEffect(() => { if (isHydrated) saveStorage('cg_user', user); }, [user, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_members', members); }, [members, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_applications', applications); }, [applications, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_projects', projects); }, [projects, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_tasks', tasks); }, [tasks, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_events', events); }, [events, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_bookings', bookings); }, [bookings, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_resources', resources); }, [resources, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_transactions', transactions); }, [transactions, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_invoices', invoices); }, [invoices, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_media', media); }, [media, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_marketItems', marketItems); }, [marketItems, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_marketSales', marketSales); }, [marketSales, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_programmes', programmes); }, [programmes, isHydrated]);
+  useEffect(() => { if (isHydrated) saveStorage('cg_masterclasses', masterclasses); }, [masterclasses, isHydrated]);
+
+  const handleAddProgramme = (newProg: Omit<Programme, 'id'>) => {
+    const prog: Programme = {
+      ...newProg,
+      id: `prog-${Date.now()}`
+    };
+    setProgrammes(prev => [prog, ...prev]);
+  };
+
+  const handleDeleteProgramme = (id: string) => {
+    setProgrammes(prev => prev.filter(p => p.id !== id));
+  };
 
   const handleUpdateProgramme = (id: string, updates: Partial<Programme>) => {
     setProgrammes(prev => {
@@ -711,6 +718,8 @@ export default function App() {
           <ProgrammesView 
             programmes={programmes}
             onUpdateProgramme={handleUpdateProgramme}
+            onAddProgramme={handleAddProgramme}
+            onDeleteProgramme={handleDeleteProgramme}
             onNavigateToProjects={(cat) => handleNavigate('/projects')}
           />
         );
